@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#006b5f">
+  <meta name="description" content="ระบบค้นหาคำพิพากษาหรือคำสั่งที่พร้อมคัดถ่าย ศาลจังหวัดลพบุรี">
+  <meta name="robots" content="noindex">
+  <title>ระบบค้นหาคำพิพากษาหรือคำสั่งที่พร้อมคัดถ่าย · ศาลจังหวัดลพบุรี</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23006b5f'/%3E%3Cpath d='M18 44h28v4H18zM20 26h24l-12-9zM22 30h4v12h-4zm8 0h4v12h-4zm8 0h4v12h-4z' fill='%23e9c46a'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --p: #006b5f; --p-dark: #034c44; --p-soft: #dff2ee;
+      --bg: #f6f8f7; --surface: #fff; --line: #d7e4e0;
+      --text: #21312e; --muted: #65736f;
+      --blue: #3b6fb0; --blue-dark: #335f97;
+      --amber: #a66a12; --amber-soft: #fff4df;
+      --red: #c62828; --red-soft: #ffeded;
+      --green: #2e7d32; --green-soft: #effaf1;
+      --ring: rgba(0,107,95,.32);
+      --gold: #e9c46a;
+      --radius: 10px;
+      --safe-l: env(safe-area-inset-left, 0px);
+      --safe-r: env(safe-area-inset-right, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; min-height: 100dvh; font-family: 'Sarabun', system-ui, sans-serif;
+      color: var(--text); font-size: 16px; line-height: 1.55;
+      background: linear-gradient(180deg, rgba(0,107,95,.06), rgba(0,0,0,0) 300px), var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+    :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; border-radius: 6px; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+    .skip-link { position: absolute; left: -9999px; top: 10px; background: var(--p); color: #fff; padding: 10px 14px; border-radius: 6px; z-index: 9999; }
+    .skip-link:focus { left: 10px; }
+
+    /* ---------- header ---------- */
+    .top-band {
+      background: linear-gradient(135deg, rgba(255,255,255,.09), rgba(255,255,255,0)), var(--p);
+      color: #fff; border-bottom: 1px solid rgba(255,255,255,.18);
+    }
+    .top-inner {
+      max-width: 1180px; margin: 0 auto; padding: 22px calc(16px + var(--safe-r)) 24px calc(16px + var(--safe-l));
+      display: grid; grid-template-columns: auto minmax(0,1fr); gap: 2px 16px; align-items: center;
+    }
+    .crest { grid-row: 1 / span 3; width: 58px; height: 58px; border: 2px solid var(--gold); border-radius: 50%; display: grid; place-items: center; color: var(--gold); }
+    .crest svg { width: 30px; height: 30px; fill: currentColor; }
+    .eyebrow { font-weight: 700; font-size: .9rem; color: rgba(255,255,255,.9); }
+    .brand-title { margin: 0; font-size: clamp(1.25rem, 3.4vw, 2.1rem); line-height: 1.25; font-weight: 800; }
+    .brand-sub { margin: 0; color: rgba(255,255,255,.86); font-size: .96rem; max-width: 880px; }
+
+    main { max-width: 1180px; margin: 0 auto; padding: 20px calc(16px + var(--safe-r)) calc(40px + var(--safe-b)) calc(16px + var(--safe-l)); }
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 10px 24px rgba(36,62,57,.08); animation: fadeUp .3s ease both; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+    /* ---------- search ---------- */
+    .search-panel { padding: 14px; margin-bottom: 16px; }
+    .mode-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .mode-tabs button {
+      border: 1px solid var(--line); background: #fff; color: var(--muted); min-height: 50px;
+      border-radius: 8px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: transform .16s, background-color .16s, color .16s;
+    }
+    .mode-tabs button:hover { transform: translateY(-1px); }
+    .mode-tabs button[aria-selected="true"] { color: #fff; background: var(--p); border-color: var(--p); box-shadow: 0 8px 18px rgba(0,107,95,.18); }
+    .mode-tabs button#modeRed[aria-selected="true"] { background: var(--red); border-color: var(--red); box-shadow: 0 8px 18px rgba(198,40,40,.2); }
+    label.lbl { display: block; font-weight: 800; color: #314540; margin-bottom: 6px; }
+    .search-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; }
+    .input {
+      width: 100%; border: 1px solid var(--line); border-radius: 8px; min-height: 48px; padding: 10px 14px; background: #fff;
+    }
+    .input:focus { border-color: var(--p); box-shadow: 0 0 0 .22rem var(--ring); outline: none; }
+    .search-input { min-height: 56px; font-size: 1.1rem; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; border-radius: 8px;
+      min-height: 50px; padding: 0 18px; font-weight: 800; cursor: pointer; text-decoration: none; white-space: nowrap;
+      transition: background-color .15s, transform .15s;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-main { background: var(--p); color: #fff; border-color: var(--p); }
+    .btn-main:hover { background: var(--p-dark); }
+    .btn-main.red { background: var(--red); border-color: var(--red); }
+    .btn-main.red:hover { background: #a91f1f; }
+    .btn-blue { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .btn-blue:hover { background: var(--blue-dark); }
+    .btn-ghost { background: #fff; color: var(--text); border-color: var(--line); }
+    .btn-ghost:hover { background: #f1f5f3; }
+    .btn[disabled] { opacity: .6; cursor: wait; }
+    .example-line { margin: 12px 0 0; color: #9aa6a2; font-size: .9rem; font-weight: 300; }
+    .example-line .ex { color: #51625d; font-weight: 400; margin-right: 12px; cursor: pointer; text-decoration: underline dotted; }
+    .data-note { margin: 6px 0 0; color: var(--muted); font-size: .92rem; }
+
+    /* ---------- results ---------- */
+    .layout { display: grid; gap: 16px; align-items: start; }
+    .layout.collapsed { grid-template-columns: minmax(0,600px); justify-content: center; }
+    .layout.expanded { grid-template-columns: minmax(0,1.05fr) minmax(320px,.95fr); }
+    .result-card { border: 1px solid #cfe8d4; background: var(--green-soft); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; animation: fadeUp .3s ease both; }
+    .result-card.fail { background: var(--red-soft); border-color: #efc5c5; }
+    .result-title { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .result-icon { width: 52px; height: 52px; flex: 0 0 auto; display: grid; place-items: center; color: #fff; background: var(--green); border-radius: 50%; font-size: 1.5rem; font-weight: 800; }
+    .fail .result-icon { background: var(--red); }
+    .result-title h2 { margin: 0; font-size: 1.3rem; font-weight: 800; color: #1b5e20; }
+    .fail .result-title h2 { color: var(--red); }
+    .result-title p { margin: 3px 0 0; color: var(--muted); }
+    .case-badges { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+    .case-badge { border-radius: 999px; min-height: 44px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; padding: 8px 14px; text-align: center; word-break: break-word; }
+    .case-black { background: var(--p); } .case-red { background: var(--red); }
+    .notice { border-left: 4px solid var(--amber); background: var(--amber-soft); color: #61420f; border-radius: 6px; padding: 12px 14px; font-size: .94rem; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .btn-row .btn { flex: 1 1 200px; }
+    .proc-toggle { background: none; border: none; color: var(--p); font-weight: 800; padding: 10px 2px 2px; cursor: pointer; }
+    .proc-toggle:hover { text-decoration: underline; }
+    .hint-box { background: #f3f7f5; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-top: 4px; }
+    .hint-box strong { color: var(--p-dark); }
+    .hint-box ul { margin: 6px 0 0; padding-left: 20px; }
+    .small-muted { color: var(--muted); font-size: .9rem; margin: 0 0 8px; }
+
+    .request-panel, .rules-panel { border-radius: var(--radius); border: 1px solid var(--line); background: #fff; box-shadow: 0 8px 22px rgba(36,62,57,.07); overflow: hidden; animation: fadeUp .3s ease both; }
+    .request-panel { border-color: #d8b06f; }
+    .rules-panel { margin-top: 12px; }
+    .panel-strip { padding: 14px 16px; background: var(--p-soft); border-bottom: 1px solid var(--line); color: var(--p-dark); font-weight: 800; display: flex; align-items: center; gap: 9px; }
+    .request-panel .panel-strip { background: #fff2d7; color: #704710; border-bottom-color: #e9cf9c; }
+    .panel-body { padding: 16px; }
+    .panel-body h3 { font-size: 1rem; color: var(--p-dark); font-weight: 800; margin: 0 0 8px; }
+    .panel-body ul, .panel-body ol { padding-left: 22px; margin: 0 0 16px; }
+    .panel-body li { margin-bottom: 5px; }
+    .status-pill { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid var(--line); color: var(--p); border-radius: 999px; padding: 5px 10px; font-weight: 800; font-size: .84rem; }
+    .form-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+    .f-12 { grid-column: span 12; } .f-8 { grid-column: span 8; } .f-6 { grid-column: span 6; } .f-4 { grid-column: span 4; }
+    .form-text { color: var(--muted); font-size: .85rem; margin-top: 4px; }
+    textarea.input { min-height: 88px; resize: vertical; }
+    .check { display: flex; gap: 10px; align-items: flex-start; }
+    .check input { width: 20px; height: 20px; margin-top: 3px; flex: 0 0 auto; accent-color: var(--p); }
+    .req { color: var(--red); }
+
+    .site-footer { max-width: 1180px; margin: 0 auto; padding: 18px 16px calc(30px + var(--safe-b)); color: var(--muted); font-size: .88rem; border-top: 1px solid var(--line); }
+
+    /* ---------- overlay / toast / dialog ---------- */
+    .overlay { position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center; text-align: center; color: #fff; background: rgba(0,0,0,.62); padding: 20px; }
+    .overlay.show { display: flex; }
+    .spinner { width: 42px; height: 42px; border: 4px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; margin: 0 auto 12px; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    dialog.dlg { border: none; border-radius: 14px; padding: 0; max-width: min(92vw, 460px); width: 100%; box-shadow: 0 24px 60px rgba(0,0,0,.3); font-family: inherit; }
+    dialog.dlg::backdrop { background: rgba(0,0,0,.5); }
+    .dlg-body { padding: 26px 22px 20px; text-align: center; }
+    .dlg-icon { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 14px; display: grid; place-items: center; font-size: 2rem; font-weight: 800; color: #fff; }
+    .dlg-icon.success { background: var(--green); } .dlg-icon.error { background: var(--red); } .dlg-icon.warning { background: var(--amber); } .dlg-icon.info { background: var(--blue); }
+    .dlg-title { font-size: 1.25rem; font-weight: 800; margin: 0 0 8px; }
+    .dlg-text { color: var(--muted); margin: 0; overflow-wrap: anywhere; }
+    .dlg-actions { padding: 0 22px 22px; display: flex; gap: 10px; justify-content: center; }
+    .offline-bar { display: none; background: #8e1a1a; color: #fff; text-align: center; padding: 8px 12px; font-weight: 700; }
+    .offline-bar.show { display: block; }
+
+    /* ---------- responsive: landscape phones ---------- */
+    @media (max-width: 940px) { .layout.expanded { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) {
+      .top-inner { padding-top: 18px; padding-bottom: 20px; }
+      main { padding-top: 16px; }
+      .case-badges { grid-template-columns: 1fr; }
+      .result-card { padding: 15px; }
+      .result-title { align-items: flex-start; }
+      .result-icon { width: 46px; height: 46px; font-size: 1.25rem; }
+      .f-8, .f-6, .f-4 { grid-column: span 12; }
+    }
+    @media (max-width: 520px) {
+      .mode-tabs { grid-template-columns: 1fr; }
+      .search-row { grid-template-columns: 1fr; }
+      .brand-sub { font-size: .92rem; }
+      .btn-row .btn { flex: 1 1 100%; }
+    }
+    /* แนวนอนบนมือถือ (ความสูงจำกัด): ย่อหัวและช่องว่างเพื่อให้เห็นช่องค้นหาและผลลัพธ์ทันที */
+    @media (orientation: landscape) and (max-height: 520px) {
+      .top-inner { padding: 8px 16px 10px; grid-template-columns: auto minmax(0,1fr); gap: 0 12px; }
+      .crest { width: 40px; height: 40px; grid-row: 1 / span 2; }
+      .crest svg { width: 22px; height: 22px; }
+      .eyebrow { font-size: .78rem; }
+      .brand-title { font-size: 1.05rem; }
+      .brand-sub { display: none; }
+      main { padding-top: 10px; }
+      .search-panel { padding: 10px 12px; margin-bottom: 10px; }
+      .mode-tabs { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+      .mode-tabs button { min-height: 40px; }
+      .search-row { grid-template-columns: minmax(0,1fr) auto; }
+      .search-input { min-height: 46px; font-size: 1rem; }
+      .btn { min-height: 44px; }
+      .example-line, .data-note { display: none; }
+      .layout.expanded { grid-template-columns: minmax(0,1fr) minmax(300px,.9fr); }
+      .case-badges { grid-template-columns: 1fr 1fr; }
+      .f-6 { grid-column: span 6; } .f-8 { grid-column: span 8; } .f-4 { grid-column: span 4; }
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">ข้ามไปยังเนื้อหาหลัก</a>
+  <div id="offlineBar" class="offline-bar" role="status">ไม่มีการเชื่อมต่ออินเทอร์เน็ต — ระบบจะใช้งานได้เมื่อกลับมาออนไลน์</div>
+
+  <div id="loading" class="overlay" role="status" aria-live="polite">
+    <div><div class="spinner" aria-hidden="true"></div><div style="font-weight:800">กำลังดำเนินการ...</div></div>
+  </div>
+
+  <header class="top-band" role="banner">
+    <div class="top-inner">
+      <span class="crest" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 2 2 7v2h20V7L12 2zm-8 9v7H2v2h20v-2h-2v-7h-3v7h-2v-7h-2v7H9v-7H7v7H4v-7H4z"/></svg>
+      </span>
+      <span class="eyebrow">ศาลจังหวัดลพบุรี</span>
+      <h1 class="brand-title">ระบบค้นหาคำพิพากษาหรือคำสั่งที่พร้อมคัดถ่าย</h1>
+      <p class="brand-sub">ค้นหาเลขคดี ตรวจสอบความพร้อมคัดถ่าย และแจ้งความประสงค์ขอคัดถ่ายล่วงหน้าเพื่อให้เจ้าหน้าที่ตรวจสอบสิทธิก่อนดำเนินการ</p>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="panel search-panel" aria-label="ค้นหาเลขคดี">
+      <div class="mode-tabs" role="tablist" aria-label="ประเภทเลขคดี">
+        <button id="modeBlack" type="button" role="tab" aria-selected="true" onclick="setSearchMode('black')">📘 ค้นหาเลขคดีดำ</button>
+        <button id="modeRed" type="button" role="tab" aria-selected="false" onclick="setSearchMode('red')">📕 ค้นหาเลขคดีแดง</button>
+      </div>
+      <label id="searchLabel" for="caseInput" class="lbl">ระบุเลขคดีดำ</label>
+      <div class="search-row">
+        <input id="caseInput" class="input search-input" type="text" placeholder="เช่น อ123/2569" autocomplete="off" autocapitalize="characters" enterkeyhint="search" maxlength="40">
+        <button id="searchBtn" class="btn btn-main" type="button" onclick="doSearch()">🔍 ค้นหา</button>
+      </div>
+      <p class="example-line">ตัวอย่าง
+        <span class="ex" onclick="fillExample('อ123/2569')">อ123/2569</span>
+        <span class="ex" onclick="fillExample('ผบ45/2569')">ผบ45/2569</span>
+        <span class="ex" onclick="fillExample('ผบE121/2569')">ผบE121/2569</span>
+      </p>
+      <p class="data-note">ผลการค้นหาเป็นข้อมูลเบื้องต้น ไม่ใช่การอนุมัติให้คัดถ่าย เป็นการแจ้งความประสงค์ล่วงหน้า เจ้าหน้าที่จะตรวจสอบสิทธิและเอกสารก่อนดำเนินการ</p>
+    </section>
+
+    <div id="resultArea" aria-live="polite"></div>
+  </main>
+
+  <footer class="site-footer">
+    ศาลจังหวัดลพบุรี · ระบบพัฒนาภายในหน่วยงาน เพื่ออำนวยความสะดวกแก่ประชาชนในการตรวจสอบความพร้อมคัดถ่ายคำพิพากษาหรือคำสั่ง
+  </footer>
+
+  <dialog id="dlg" class="dlg" aria-labelledby="dlgTitle">
+    <div class="dlg-body">
+      <div id="dlgIcon" class="dlg-icon info">i</div>
+      <h2 id="dlgTitle" class="dlg-title"></h2>
+      <p id="dlgText" class="dlg-text"></p>
+    </div>
+    <div class="dlg-actions"><button id="dlgOk" class="btn btn-main" type="button">ตกลง</button></div>
+  </dialog>
+
+  <script>
+    // =====================================================================
+    // ตั้งค่า: URL ของ Web App (Apps Script) ที่ deploy แบบ "Anyone"
+    // เปลี่ยนค่านี้ทุกครั้งที่สร้าง deployment ใหม่ (ถ้าใช้ "Manage deployments > Edit > New version" URL จะไม่เปลี่ยน)
+    // =====================================================================
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzoyhrfbg-XrKslNCOAlUrbrJIiXNxTASrBRCcczeHVcGAEmjtD7Xswzi5yG3MzAAN46w/exec';
+    const API_TIMEOUT_MS = 30000;
+
+    let searchMode = 'black';
+    let latestResults = [];
+    let selectedCase = null;
+    let busy = false;
+
+    // ---------- API (POST text/plain เพื่อเลี่ยง CORS preflight; GAS จะ redirect 302 → ต้อง follow) ----------
+    async function api(action, data) {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), API_TIMEOUT_MS);
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST', redirect: 'follow', signal: ctrl.signal,
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(Object.assign({ action: action }, data || {}))
+        });
+        const text = await res.text();
+        let json; try { json = JSON.parse(text); } catch (e) { throw new Error('เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง (' + res.status + ')'); }
+        return json;
+      } catch (e) {
+        if (e.name === 'AbortError') throw new Error('การเชื่อมต่อใช้เวลานานเกินไป กรุณาลองใหม่');
+        if (!navigator.onLine) throw new Error('ไม่มีการเชื่อมต่ออินเทอร์เน็ต');
+        throw e;
+      } finally { clearTimeout(t); }
+    }
+
+    // ---------- helpers ----------
+    function escapeHtml(s) {
+      if (s === null || s === undefined) return '';
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+    function setLoading(on) {
+      busy = on;
+      document.getElementById('loading').classList.toggle('show', on);
+      document.getElementById('searchBtn').disabled = on;
+    }
+    function alertBox(kind, title, text) {
+      return new Promise(resolve => {
+        const d = document.getElementById('dlg');
+        const ic = document.getElementById('dlgIcon');
+        ic.className = 'dlg-icon ' + kind;
+        ic.textContent = kind === 'success' ? '✓' : kind === 'error' ? '✕' : kind === 'warning' ? '!' : 'i';
+        document.getElementById('dlgTitle').textContent = title || '';
+        document.getElementById('dlgText').innerHTML = text || '';
+        const ok = document.getElementById('dlgOk');
+        const done = () => { d.removeEventListener('close', done); ok.onclick = null; resolve(); };
+        ok.onclick = () => d.close();
+        d.addEventListener('close', done);
+        if (typeof d.showModal === 'function') d.showModal(); else { window.alert((title || '') + '\n' + String(text || '').replace(/<[^>]+>/g, '')); resolve(); }
+      });
+    }
+    function normalizeInput(v) { return String(v || '').replace(/[​-‏﻿ ]/g, '').trim().toUpperCase(); }
+    function fillExample(v) { const i = document.getElementById('caseInput'); i.value = v; i.focus(); }
+
+    function setSearchMode(mode) {
+      searchMode = mode;
+      document.getElementById('modeBlack').setAttribute('aria-selected', mode === 'black');
+      document.getElementById('modeRed').setAttribute('aria-selected', mode === 'red');
+      document.getElementById('searchLabel').textContent = mode === 'black' ? 'ระบุเลขคดีดำ' : 'ระบุเลขคดีแดง';
+      document.getElementById('caseInput').placeholder = mode === 'black' ? 'เช่น อ123/2569' : 'เช่น อ55/2569';
+      document.getElementById('searchBtn').classList.toggle('red', mode === 'red');
+      document.getElementById('caseInput').focus();
+    }
+
+    document.getElementById('caseInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
+    document.getElementById('resultArea').addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      const t = e.target;
+      if (!t || t.tagName === 'TEXTAREA') return;
+      if (['reqName','reqRole','reqPhone','reqEmail','reqNote','reqVisitDate'].indexOf(t.id) > -1) { e.preventDefault(); submitRequest(); }
+    });
+    function updateOnline() { document.getElementById('offlineBar').classList.toggle('show', !navigator.onLine); }
+    window.addEventListener('online', updateOnline); window.addEventListener('offline', updateOnline); updateOnline();
+
+    // ---------- search ----------
+    async function doSearch() {
+      if (busy) return;
+      const val = normalizeInput(document.getElementById('caseInput').value);
+      document.getElementById('caseInput').value = val;
+      if (!val) { await alertBox('warning', 'กรุณาระบุเลขคดี'); return; }
+      latestResults = []; selectedCase = null;
+      document.getElementById('resultArea').innerHTML = '';
+      setLoading(true);
+      try {
+        const data = await api('search', { keyword: val, type: searchMode });
+        showResults(data);
+      } catch (e) {
+        showResults({ error: e.message || String(e) });
+      } finally { setLoading(false); }
+    }
+
+    function showResults(data) {
+      const area = document.getElementById('resultArea');
+      if (data && data.error) { area.innerHTML = renderFail(data.error); return; }
+      if (!Array.isArray(data) || data.length === 0) { area.innerHTML = renderFail('ไม่พบรายการตามเลขคดีที่ค้นหา'); return; }
+      latestResults = data; selectedCase = data[0];
+      let cards = '';
+      data.forEach((item, idx) => { cards += renderFound(item, idx); });
+      area.innerHTML =
+        '<div id="layout" class="layout collapsed">' +
+          '<div class="col-result">' + cards + '<div id="procPanel" hidden>' + renderProcedurePanel() + '</div></div>' +
+          '<div id="formCol" hidden>' + renderRequestForm() + '</div>' +
+        '</div>';
+      area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function renderFound(item, idx) {
+      return '<article class="result-card">' +
+        '<div class="result-title"><div class="result-icon" aria-hidden="true">✓</div>' +
+        '<div><h2>พบข้อมูลที่พร้อมคัดถ่าย</h2><p>พร้อมให้แจ้งความประสงค์ขอคัดถ่ายคำพิพากษาหรือคำสั่ง</p></div></div>' +
+        '<div class="case-badges">' +
+        '<div class="case-badge case-black">ดำ ' + escapeHtml(item.blackNo || '-') + '</div>' +
+        '<div class="case-badge case-red">แดง ' + escapeHtml(item.redNo || '-') + '</div></div>' +
+        '<p class="small-muted">วันที่นำเข้าข้อมูล: <strong>' + escapeHtml(item.date || '-') + '</strong></p>' +
+        '<div class="notice">การพบข้อมูลในระบบยังไม่ถือเป็นการอนุมัติ เจ้าหน้าที่ต้องตรวจสอบสิทธิ เอกสาร และระเบียบที่เกี่ยวข้องก่อนดำเนินการ</div>' +
+        '<div class="btn-row">' +
+        '<button class="btn btn-main" type="button" onclick="openRequest(' + idx + ')">✉️ แจ้งความประสงค์ขอคัดถ่าย</button>' +
+        '<button class="btn btn-blue" type="button" onclick="resetSearch()">🔍 ค้นหาใหม่</button></div>' +
+        '<button class="proc-toggle" type="button" onclick="toggleProcedure()">ดูขั้นตอน / ระเบียบการคัดถ่าย ▾</button>' +
+        '</article>';
+    }
+
+    function renderFail(message) {
+      return '<div class="layout collapsed"><div class="col-result"><div class="result-card fail" role="alert">' +
+        '<div class="result-title"><div class="result-icon" aria-hidden="true">✕</div>' +
+        '<div><h2>ไม่พบข้อมูล</h2><p>' + escapeHtml(message) + '</p></div></div>' +
+        '<div class="hint-box"><strong>ลองตรวจสอบ</strong><ul>' +
+        '<li>การสะกดเลขคดีและปี (เช่น ลงท้าย /2569)</li>' +
+        '<li>รูปแบบเลขคดี เช่น อ123/2569 หรือ ผบ45/2569</li>' +
+        '<li>ลองสลับแท็บค้นหา ดำ / แดง</li></ul></div>' +
+        '<div class="btn-row">' +
+        '<button class="btn btn-blue" type="button" onclick="resetSearch()">🔍 ค้นหาใหม่</button>' +
+        '<button class="btn btn-ghost" type="button" onclick="contactStaff()">☎️ ติดต่อเจ้าหน้าที่</button></div>' +
+        '</div></div></div>';
+    }
+
+    function todayISO() {
+      const d = new Date(); const p = n => ('0' + n).slice(-2);
+      return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+    }
+
+    function renderRequestForm() {
+      const item = selectedCase || latestResults[0] || {};
+      return '<section class="request-panel" aria-label="แบบแจ้งความประสงค์">' +
+        '<div class="panel-strip">📝 แบบแจ้งความประสงค์ขอคัดถ่าย</div>' +
+        '<div class="panel-body">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;margin-bottom:14px;">' +
+        '<p class="small-muted" style="margin:0">กรอกข้อมูลเพื่อให้เจ้าหน้าที่ตรวจสอบสิทธิและติดต่อกลับ</p>' +
+        '<span class="status-pill">ℹ️ ยังไม่ใช่การอนุมัติ</span></div>' +
+        '<div class="form-grid">' +
+        '<div class="f-6"><label class="lbl" for="reqBlack">เลขคดีดำ</label><input id="reqBlack" class="input" type="text" value="' + escapeHtml(item.blackNo || '') + '" readonly></div>' +
+        '<div class="f-6"><label class="lbl" for="reqRed">เลขคดีแดง</label><input id="reqRed" class="input" type="text" value="' + escapeHtml(item.redNo || '') + '" readonly></div>' +
+        '<div class="f-8"><label class="lbl" for="reqName">ชื่อผู้แจ้งความประสงค์ <span class="req">*</span></label><input id="reqName" class="input" type="text" autocomplete="name" maxlength="200"></div>' +
+        '<div class="f-4"><label class="lbl" for="reqRole">สถานะผู้ขอ <span class="req">*</span></label><select id="reqRole" class="input"><option value="">เลือก</option><option>คู่ความ</option><option>ทนายความ</option><option>ผู้รับมอบอำนาจ</option></select></div>' +
+        '<div class="f-6"><label class="lbl" for="reqPhone">เบอร์โทรศัพท์ <span class="req">*</span></label><input id="reqPhone" class="input" type="tel" inputmode="tel" autocomplete="tel" maxlength="30" placeholder="0812345678"></div>' +
+        '<div class="f-6"><label class="lbl" for="reqEmail">อีเมล</label><input id="reqEmail" class="input" type="email" autocomplete="email" maxlength="200"></div>' +
+        '<div class="f-12"><label class="lbl" for="reqPurpose">วัตถุประสงค์ในการขอคัดถ่าย <span class="req">*</span></label><textarea id="reqPurpose" class="input" maxlength="2000" placeholder="เช่น ยื่นต่อหน่วยงานราชการ หรือใช้เป็นหลักฐานประกอบ"></textarea></div>' +
+        '<div class="f-12"><label class="lbl" for="reqNote">หมายเหตุเพิ่มเติม</label><input id="reqNote" class="input" type="text" maxlength="1000" placeholder="ข้อมูลเพิ่มเติมที่ต้องการแจ้งเจ้าหน้าที่"></div>' +
+        '<div class="f-6"><label class="lbl" for="reqVisitDate">วันที่จะเดินทางมาติดต่อ</label><input id="reqVisitDate" class="input" type="date" min="' + todayISO() + '"><div class="form-text">โปรดระบุวันที่คาดว่าจะมารับบริการ เพื่อให้เจ้าหน้าที่เตรียมเอกสารล่วงหน้า</div></div>' +
+        '<div class="f-12"><label class="check"><input id="reqConsent" type="checkbox"><span>ข้าพเจ้ารับทราบว่าการแจ้งความประสงค์นี้ยังไม่ใช่การอนุมัติ และยินยอมให้ศาลจังหวัดลพบุรีเก็บ ใช้ และประมวลผลข้อมูลส่วนบุคคลเพื่อการตรวจสอบสิทธิและติดต่อกลับเกี่ยวกับการขอคัดถ่ายเท่านั้น (PDPA)</span></label></div>' +
+        '<div class="f-12"><button id="submitBtn" class="btn btn-main" style="width:100%" type="button" onclick="submitRequest()">✉️ ส่งแจ้งความประสงค์</button></div>' +
+        '</div></div></section>';
+    }
+
+    function renderProcedurePanel() {
+      return '<aside class="rules-panel" aria-label="ขั้นตอนและระเบียบการคัดถ่าย">' +
+        '<div class="panel-strip">📋 ขั้นตอนและระเบียบการคัดถ่าย</div><div class="panel-body">' +
+        '<h3>เอกสารที่ต้องเตรียม</h3><ul><li>บัตรประจำตัวประชาชนตัวจริง</li><li>กรณีมอบอำนาจ: หนังสือมอบอำนาจ พร้อมบัตรผู้มอบและผู้รับมอบ</li><li>เอกสารประกอบอื่นตามที่เจ้าหน้าที่แจ้ง</li></ul>' +
+        '<h3>สถานที่และเวลาทำการ</h3><ul><li>งานเก็บสำนวน ศาลจังหวัดลพบุรี</li><li>วันจันทร์-ศุกร์ เวลา 08:30-16:30 น. เว้นวันหยุดราชการ</li></ul>' +
+        '<h3>ขั้นตอนโดยสรุป</h3><ol><li>ตรวจสอบเลขคดีผ่านระบบนี้</li><li>แจ้งความประสงค์ล่วงหน้า</li><li>เจ้าหน้าที่ตรวจสอบสิทธิและเตรียมสำนวน</li><li>ยื่นคำร้อง/แสดงบัตรที่เคาน์เตอร์ และชำระค่าธรรมเนียมตามระเบียบ</li></ol>' +
+        '<div class="notice">ค่าธรรมเนียมและการคัดถ่ายเป็นไปตามระเบียบของทางราชการ โปรดสอบถามเจ้าหน้าที่หน้าเคาน์เตอร์ที่ให้การบริการ</div>' +
+        '</div></aside>';
+    }
+
+    function openRequest(idx) {
+      selectedCase = latestResults[idx] || latestResults[0] || null;
+      const layout = document.getElementById('layout'), formCol = document.getElementById('formCol');
+      if (!layout || !formCol || !selectedCase) return;
+      const rb = document.getElementById('reqBlack'), rr = document.getElementById('reqRed');
+      if (rb) rb.value = selectedCase.blackNo || '';
+      if (rr) rr.value = selectedCase.redNo || '';
+      layout.classList.remove('collapsed'); layout.classList.add('expanded');
+      formCol.hidden = false;
+      setTimeout(() => {
+        const name = document.getElementById('reqName');
+        if (window.innerWidth <= 940 || window.innerHeight <= 520) formCol.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (name) name.focus({ preventScroll: true });
+      }, 120);
+    }
+    function toggleProcedure() { const p = document.getElementById('procPanel'); if (p) p.hidden = !p.hidden; }
+    function resetSearch() {
+      latestResults = []; selectedCase = null;
+      document.getElementById('resultArea').innerHTML = '';
+      const input = document.getElementById('caseInput'); input.value = '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => input.focus(), 200);
+    }
+    function contactStaff() { alertBox('info', 'ติดต่อเจ้าหน้าที่', 'งานเก็บสำนวน ศาลจังหวัดลพบุรี<br>ในวันและเวลาราชการ จันทร์-ศุกร์ 08:30-16:30 น.'); }
+
+    async function submitRequest() {
+      if (busy) return;
+      if (!selectedCase) { await alertBox('warning', 'แจ้งเตือน', 'กรุณาค้นหาและเลือกรายการก่อนแจ้งความประสงค์'); return; }
+      const g = id => document.getElementById(id);
+      const name = g('reqName').value.trim(), role = g('reqRole').value, phone = g('reqPhone').value.trim();
+      const email = g('reqEmail').value.trim(), purpose = g('reqPurpose').value.trim(), consent = g('reqConsent').checked;
+      if (!name) return alertBox('warning', 'กรอกข้อมูลไม่ครบ', 'กรุณาระบุชื่อผู้แจ้งความประสงค์');
+      if (!role) return alertBox('warning', 'กรอกข้อมูลไม่ครบ', 'กรุณาเลือกสถานะผู้ขอ');
+      if (!phone) return alertBox('warning', 'กรอกข้อมูลไม่ครบ', 'กรุณาระบุเบอร์โทรศัพท์เพื่อให้ติดต่อกลับ');
+      if (!/^[0-9+\-\s().]{6,30}$/.test(phone)) return alertBox('warning', 'รูปแบบไม่ถูกต้อง', 'กรุณาตรวจสอบเบอร์โทรศัพท์');
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alertBox('warning', 'รูปแบบไม่ถูกต้อง', 'กรุณาตรวจสอบอีเมล');
+      if (!purpose) return alertBox('warning', 'กรอกข้อมูลไม่ครบ', 'กรุณาระบุวัตถุประสงค์ในการขอคัดถ่าย');
+      if (!consent) return alertBox('warning', 'โปรดยืนยันความยินยอม', 'กรุณาทำเครื่องหมายยอมรับเงื่อนไขการเก็บข้อมูล (PDPA) ก่อนส่ง');
+
+      const payload = {
+        blackNo: selectedCase.blackNo || g('reqBlack').value, redNo: selectedCase.redNo || g('reqRed').value,
+        requesterName: name, requesterRole: role, phone: phone, email: email, purpose: purpose,
+        note: g('reqNote').value.trim(), visitDate: g('reqVisitDate').value || '', consent: true,
+        clientInfo: (navigator.userAgent || '').slice(0, 300)
+      };
+      setLoading(true);
+      const sb = g('submitBtn'); if (sb) sb.disabled = true;
+      try {
+        const res = await api('submitRequest', { payload: payload });
+        if (!res || !res.success) { await alertBox('error', 'ไม่สามารถบันทึกคำขอได้', escapeHtml((res && res.error) || 'เกิดข้อผิดพลาด')); return; }
+        await alertBox('success', 'รับแจ้งความประสงค์แล้ว', 'เลขรับคำขอ: <strong>' + escapeHtml(res.requestId) + '</strong><br>เจ้าหน้าที่จะตรวจสอบสิทธิและติดต่อกลับตามช่องทางที่ให้ไว้');
+        resetSearch();
+      } catch (e) {
+        await alertBox('error', 'เกิดข้อผิดพลาด', escapeHtml(e.message || String(e)));
+      } finally { setLoading(false); if (sb) sb.disabled = false; }
+    }
+  </script>
+</body>
+</html>
