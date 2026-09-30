@@ -95,7 +95,7 @@
     .btn-ghost:hover { background: #f1f5f3; }
     .btn[disabled] { opacity: .6; cursor: wait; }
     .example-line { margin: 12px 0 0; color: #9aa6a2; font-size: .9rem; font-weight: 300; }
-    .example-line .ex { color: #51625d; font-weight: 400; margin-right: 12px; cursor: pointer; text-decoration: underline dotted; }
+    .example-line .ex { color: #51625d; font-weight: 400; margin-right: 12px; }
     .data-note { margin: 6px 0 0; color: var(--muted); font-size: .92rem; }
 
     /* ---------- results ---------- */
@@ -229,9 +229,9 @@
         <button id="searchBtn" class="btn btn-main" type="button" onclick="doSearch()">🔍 ค้นหา</button>
       </div>
       <p class="example-line">ตัวอย่าง
-        <span class="ex" onclick="fillExample('อ123/2569')">อ123/2569</span>
-        <span class="ex" onclick="fillExample('ผบ45/2569')">ผบ45/2569</span>
-        <span class="ex" onclick="fillExample('ผบE121/2569')">ผบE121/2569</span>
+        <span class="ex">อ123/2569</span>
+        <span class="ex">ผบ45/2569</span>
+        <span class="ex">ผบE121/2569</span>
       </p>
       <p class="data-note">ผลการค้นหาเป็นข้อมูลเบื้องต้น ไม่ใช่การอนุมัติให้คัดถ่าย เป็นการแจ้งความประสงค์ล่วงหน้า เจ้าหน้าที่จะตรวจสอบสิทธิและเอกสารก่อนดำเนินการ</p>
     </section>
@@ -311,7 +311,6 @@
       });
     }
     function normalizeInput(v) { return String(v || '').replace(/[​-‏﻿ ]/g, '').trim().toUpperCase(); }
-    function fillExample(v) { const i = document.getElementById('caseInput'); i.value = v; i.focus(); }
 
     function setSearchMode(mode) {
       searchMode = mode;
