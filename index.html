@@ -63,15 +63,32 @@
 
     /* ---------- search ---------- */
     .search-panel { padding: 14px; margin-bottom: 16px; }
-    .mode-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-    .mode-tabs button {
-      border: 1px solid var(--line); background: #fff; color: var(--muted); min-height: 50px;
-      border-radius: 8px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-      transition: transform .16s, background-color .16s, color .16s;
+    .mode-tabs {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 14px;
+      background: #eef4f2; border: 1px solid var(--line); border-radius: 14px; padding: 6px;
     }
-    .mode-tabs button:hover { transform: translateY(-1px); }
-    .mode-tabs button[aria-selected="true"] { color: #fff; background: var(--p); border-color: var(--p); box-shadow: 0 8px 18px rgba(0,107,95,.18); }
-    .mode-tabs button#modeRed[aria-selected="true"] { background: var(--red); border-color: var(--red); box-shadow: 0 8px 18px rgba(198,40,40,.2); }
+    .mode-tabs button {
+      border: 1px solid transparent; background: transparent; color: #5b6b67; min-height: 52px;
+      border-radius: 10px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 0 10px; text-align: center;
+      transition: background-color .18s, color .18s, box-shadow .18s, border-color .18s;
+    }
+    .mode-tabs .tab-ico {
+      width: 30px; height: 30px; flex: 0 0 auto; border-radius: 50%; display: grid; place-items: center;
+      font-size: 1rem; line-height: 1; background: #fff; border: 1px solid var(--line);
+      transition: background-color .18s, border-color .18s, transform .18s;
+    }
+    .mode-tabs button:hover { background: rgba(255,255,255,.78); color: var(--text); }
+    .mode-tabs button:hover .tab-ico { transform: scale(1.06); }
+    .mode-tabs button[aria-selected="true"] {
+      color: #fff; background: linear-gradient(135deg, #0a8275, var(--p)); border-color: var(--p-dark);
+      box-shadow: 0 6px 16px rgba(0,107,95,.26);
+    }
+    .mode-tabs button[aria-selected="true"] .tab-ico { background: rgba(255,255,255,.22); border-color: rgba(255,255,255,.55); }
+    .mode-tabs button#modeRed[aria-selected="true"] {
+      background: linear-gradient(135deg, #d33a3a, var(--red)); border-color: #9e1f1f;
+      box-shadow: 0 6px 16px rgba(198,40,40,.26);
+    }
     label.lbl { display: block; font-weight: 800; color: #314540; margin-bottom: 6px; }
     .search-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; }
     .input {
@@ -94,8 +111,8 @@
     .btn-ghost { background: #fff; color: var(--text); border-color: var(--line); }
     .btn-ghost:hover { background: #f1f5f3; }
     .btn[disabled] { opacity: .6; cursor: wait; }
-    .example-line { margin: 12px 0 0; color: #9aa6a2; font-size: .9rem; font-weight: 300; }
-    .example-line .ex { color: #51625d; font-weight: 400; margin-right: 12px; }
+    .example-line { margin: 12px 0 0; color: #000; font-size: .9rem; font-weight: 400; }
+    .example-line .ex { color: #000; font-weight: 700; margin-right: 12px; }
     .data-note { margin: 6px 0 0; color: var(--muted); font-size: .92rem; }
 
     /* ---------- results ---------- */
@@ -186,12 +203,14 @@
       .brand-sub { display: none; }
       main { padding-top: 10px; }
       .search-panel { padding: 10px 12px; margin-bottom: 10px; }
-      .mode-tabs { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
-      .mode-tabs button { min-height: 40px; }
+      .mode-tabs { grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; padding: 4px; border-radius: 12px; }
+      .mode-tabs button { min-height: 42px; gap: 8px; }
+      .mode-tabs .tab-ico { width: 24px; height: 24px; font-size: .85rem; }
       .search-row { grid-template-columns: minmax(0,1fr) auto; }
       .search-input { min-height: 46px; font-size: 1rem; }
       .btn { min-height: 44px; }
-      .example-line, .data-note { display: none; }
+      .example-line { display: none; }
+      .data-note { font-size: .8rem; margin-top: 4px; }
       .layout.expanded { grid-template-columns: minmax(0,1fr) minmax(300px,.9fr); }
       .case-badges { grid-template-columns: 1fr 1fr; }
       .f-6 { grid-column: span 6; } .f-8 { grid-column: span 8; } .f-4 { grid-column: span 4; }
@@ -220,8 +239,8 @@
   <main id="main-content">
     <section class="panel search-panel" aria-label="ค้นหาเลขคดี">
       <div class="mode-tabs" role="tablist" aria-label="ประเภทเลขคดี">
-        <button id="modeBlack" type="button" role="tab" aria-selected="true" onclick="setSearchMode('black')">📘 ค้นหาเลขคดีดำ</button>
-        <button id="modeRed" type="button" role="tab" aria-selected="false" onclick="setSearchMode('red')">📕 ค้นหาเลขคดีแดง</button>
+        <button id="modeBlack" type="button" role="tab" aria-selected="true" onclick="setSearchMode('black')"><span class="tab-ico" aria-hidden="true">📘</span><span>ค้นหาเลขคดีดำ</span></button>
+        <button id="modeRed" type="button" role="tab" aria-selected="false" onclick="setSearchMode('red')"><span class="tab-ico" aria-hidden="true">📕</span><span>ค้นหาเลขคดีแดง</span></button>
       </div>
       <label id="searchLabel" for="caseInput" class="lbl">ระบุเลขคดีดำ</label>
       <div class="search-row">
@@ -310,7 +329,14 @@
         if (typeof d.showModal === 'function') d.showModal(); else { window.alert((title || '') + '\n' + String(text || '').replace(/<[^>]+>/g, '')); resolve(); }
       });
     }
-    function normalizeInput(v) { return String(v || '').replace(/[​-‏﻿ ]/g, '').trim().toUpperCase(); }
+    // แปลงเลขไทย ๐-๙ → 0-9, ตัดอักขระล่องหน (zero-width / BOM / directional) และช่องว่างทุกชนิด
+    function normalizeInput(v) {
+      return String(v || '')
+        .replace(/[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, '')
+        .replace(/[\u0E50-\u0E59]/g, function (d) { return String.fromCharCode(d.charCodeAt(0) - 0x0E50 + 0x30); })
+        .replace(/\s+/g, '')
+        .toUpperCase();
+    }
 
     function setSearchMode(mode) {
       searchMode = mode;
@@ -322,7 +348,20 @@
       document.getElementById('caseInput').focus();
     }
 
-    document.getElementById('caseInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
+    document.getElementById('caseInput').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); doSearch(); } });
+    // แปลงสดเฉพาะเลขไทยและ a-z โดยคงช่องว่างและตำแหน่งเคอร์เซอร์ระหว่างพิมพ์
+    function liveNormalize(el) {
+      const before = el.value;
+      const after = before
+        .replace(/[\u0E50-\u0E59]/g, d => String.fromCharCode(d.charCodeAt(0) - 0x0E50 + 0x30))
+        .replace(/[a-z]/g, c => c.toUpperCase());
+      if (after === before) return;
+      const start = el.selectionStart, end = el.selectionEnd, direction = el.selectionDirection;
+      el.value = after;
+      try { el.setSelectionRange(start, end, direction); } catch (e) {}
+    }
+    document.getElementById('caseInput').addEventListener('input', e => { if (!e.isComposing) liveNormalize(e.target); });
+    document.getElementById('caseInput').addEventListener('compositionend', e => { liveNormalize(e.target); });
     document.getElementById('resultArea').addEventListener('keydown', e => {
       if (e.key !== 'Enter') return;
       const t = e.target;
@@ -386,7 +425,7 @@
         '<div><h2>ไม่พบข้อมูล</h2><p>' + escapeHtml(message) + '</p></div></div>' +
         '<div class="hint-box"><strong>ลองตรวจสอบ</strong><ul>' +
         '<li>การสะกดเลขคดีและปี (เช่น ลงท้าย /2569)</li>' +
-        '<li>รูปแบบเลขคดี เช่น อ123/2569 หรือ ผบ45/2569</li>' +
+        '<li>รูปแบบเลขคดี เช่น อ123/2569 · ผบ45/2569 · ผบE121/2569</li>' +
         '<li>ลองสลับแท็บค้นหา ดำ / แดง</li></ul></div>' +
         '<div class="btn-row">' +
         '<button class="btn btn-blue" type="button" onclick="resetSearch()">🔍 ค้นหาใหม่</button>' +
