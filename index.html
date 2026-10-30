@@ -282,6 +282,57 @@
     let searchMode = 'black';
     let latestResults = [];
     let selectedCase = null;
+
+    // [SRC] v3.4 ข้อมูลประกอบการค้นหา (ไม่ระบุตัวบุคคล): แหล่งที่มา ?src= / เว็บต้นทาง · อุปกรณ์ · รหัสรอบการใช้งานต่อแท็บ
+    // แยกรหัสรอบของแท็บที่คัดลอก sessionStorage โดยคงรหัสเดิมเมื่อรีโหลดแท็บ
+    function createSearchSession() {
+      const key = 'jl_sid';
+      const randomId = () => {
+        try { return Array.from(crypto.getRandomValues(new Uint8Array(8)), n => n.toString(16).padStart(2, '0')).join(''); }
+        catch (e) { return (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)).slice(0, 16); }
+      };
+      let stored = '';
+      try { stored = sessionStorage.getItem(key) || ''; } catch (e) {}
+      let resolveReady;
+      const session = { id: /^[a-z0-9._-]{1,16}$/.test(stored) ? stored : randomId(), ready: new Promise(resolve => { resolveReady = resolve; }) };
+      const save = () => { try { sessionStorage.setItem(key, session.id); } catch (e) {} };
+      save();
+      const owner = randomId();
+      let channel = null, claimed = false;
+      const finish = () => { claimed = true; resolveReady(); };
+      const send = (kind, to) => { try { channel.postMessage({ kind: kind, id: session.id, owner: owner, to: to || '' }); } catch (e) {} };
+      const renew = () => { session.id = randomId(); save(); send('probe'); };
+      try {
+        channel = new BroadcastChannel('jl_search_sessions_v34');
+        channel.onmessage = e => {
+          const msg = e.data;
+          if (!msg || msg.id !== session.id || msg.owner === owner) return;
+          if (msg.kind === 'probe') {
+            if (claimed || owner < msg.owner) send('occupied', msg.owner);
+            else renew();
+          } else if (msg.kind === 'occupied' && msg.to === owner) renew();
+        };
+        send('probe');
+        setTimeout(finish, 120);
+        window.addEventListener('pagehide', () => { try { channel.close(); } catch (e) {} }, { once: true });
+      } catch (e) {
+        // เบราว์เซอร์ที่ไม่รองรับ BroadcastChannel ยังค้นหาได้ และแยกแท็บที่เปิดจาก opener
+        try {
+          const nav = performance.getEntriesByType('navigation')[0];
+          if (stored && window.opener && (!nav || nav.type !== 'reload')) { session.id = randomId(); save(); }
+        } catch (ignore) {}
+        finish();
+      }
+      return session;
+    }
+    let SEARCH_SESSION = createSearchSession();
+    window.addEventListener('pageshow', e => { if (e.persisted) SEARCH_SESSION = createSearchSession(); });
+    function clientMeta() {
+      let ref = '', src = '';
+      try { if (document.referrer) { const h = new URL(document.referrer).hostname; if (h && h !== location.hostname) ref = h; } } catch (e) {}
+      try { src = new URLSearchParams(location.search).get('src') || ''; } catch (e) {}
+      return { src: src.slice(0, 40), ref: ref.slice(0, 80), ua: (navigator.userAgent || '').slice(0, 300), sid: SEARCH_SESSION.id };
+    }
     let busy = false;
 
     // ---------- API (POST text/plain เพื่อเลี่ยง CORS preflight; GAS จะ redirect 302 → ต้อง follow) ----------
@@ -381,7 +432,8 @@
       document.getElementById('resultArea').innerHTML = '';
       setLoading(true);
       try {
-        const data = await api('search', { keyword: val, type: searchMode });
+        await SEARCH_SESSION.ready;
+        const data = await api('search', { keyword: val, type: searchMode, meta: clientMeta() });   // [SRC] v3.4
         showResults(data);
       } catch (e) {
         showResults({ error: e.message || String(e) });
